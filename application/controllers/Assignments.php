@@ -626,5 +626,132 @@ class Assignments extends CI_Controller
 
 		echo $response;
 	}
+		}
+
+	//new code
+	public function downloadAllAsignments(){
+		// if ($this->user->level <= 1) {
+        //     return;
+        // }
+
+		//mengambil database seluruh assignment melalui assignment_model
+		$assignments = $this->assignment_model->all_assignments();
+
+		//mengambil library dari codeigniter untuk melakukan format zip
+		$this->load->library('zip');
+
+		//mengambil data hasil submit mahasiswa
+		$this->load->model('submit_model');
+
+		//mencari letak folder assignment
+		$rootAssignment = rtrim($this->settings_model->get_setting('assignments_root'),'/');
+		//melakukan deklarasi array untuk menyimpan problem problem
+		$problemZipFiles = array();
+
+		//looping sebanyak isi assignment
+		foreach ($assignments as $assignmentsDownload){
+			//ambil masing masing assignment berdasarkan id
+			$assignmentId = $assignmentsDownload['id'];
+
+			//bersihkan nama assignmentnya agar tulisan menjadi bersih dan aman
+			$assignmentName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $assignmentsDownload['name']);
+
+			/*
+			mengambil data final submission
+				jika rolenya dosen atau admin maka akan mengembalikan seluruh final assignment milik mahasiswa
+				jika rolenya adalah mahasiswa itu sendiri hanya akan mengembalikan final submission milik mahasiswa itu sendiri
+			*/ 
+			$finalSubmissions = $this->submit_model->get_final_submissions($assignmentId, $this->user->level, $this->user->username);
+			
+			//mengambil data problem berdasarkan id dari assignmentnya
+			$problems = $this->assignment_model->all_problems($assignmentId);
+
+			//buat array untuk setiap nama problem yang ada
+			$problemNames = array();
+
+			/**
+			 * looping sebanyak problem dan buat tulisan menjadi bersih dan aman
+			 */
+			foreach($problems as $problem){
+				$problemNames[$problem['id']] = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $problem['name']);
+			}
+			
+			//buat rray untuk setiap submission pada masing masing problem
+			$submissionsByProblem = array();
+
+			/**
+			 * ambil final submission pada setiap problem id yang ada pada assignment tersebut
+			 */
+			foreach($finalSubmissions as $finalSubmission){
+				$problemId = $finalSubmission['problem'];
+				$submissionsByProblem[$problemId][] = $finalSubmission;
+			}
+
+			//looping sebanyak isi problem pada id tersebut dan hasil submission akan dimasukkan kedalam folder zip problem
+			foreach ($submissionsByProblem as $problemId => $problem) {
+                /**
+				 * jika problemnya memiliki nama pada id tersebut mak nama problem pada folder mengikuti yang ada
+				 */
+				if (isset($problemNames[$problemId])) {
+    				$problemName = $problemNames[$problemId];
+				} 
+				else {
+					//jika tidak ada maka pakai id milik problemnya
+    				$problemName = "Problem_{$problemId}";
+				}
+
+				//format nama zip file
+                $zipName = "{$assignmentId}-{$assignmentName}-{$problemName}.zip";
+
+                $this->zip->clear_data();
+
+				//untuk mengecek apakah ada jawaban pada problem tersebut
+				$hasFileInProblem = false;
+
+				//looping sebanyak final submission
+				foreach ($problem as $finalSubmission) {
+					//mengambil file pada database dan mengubahnya menjadi extention yang sesuai
+        			$extention = filetype_to_extension($finalSubmission['file_type']);
+
+					//path untuk menuju ke file yang ingin diambil
+        			$filePath = "{$rootAssignment}/assignment_{$finalSubmission['assignment']}/p{$finalSubmission['problem']}/{$finalSubmission['username']}/{$finalSubmission['file_name']}.{$extention}";
+
+					//mengecek terlebih dahulu jika file tersebut benar benar ada pad lokasi tersebut
+        			if (file_exists($filePath)) {	
+
+							//jika ada maka dapatkan isi filenya
+           				 	$fileContent = file_get_contents($filePath);
+
+							//menyiapkan nama file yang akan di masukkan kedalam zip
+            				$zipFormat = "{$finalSubmission['username']}.{$extention}";
+							
+
+							//masukkan kedalam zip problem
+							$this->zip->add_data($zipFormat, $fileContent);
+							$hasFileInProblem = true;
+        			}
+				}
+
+				//jika ada file didalam problem maka dapatkan zipnya dan masukkan ke array problem zipFiles
+				if ($hasFileInProblem) {
+        			$problemZipFiles[$zipName] = $this->zip->get_zip();
+    			}
+			}
+			
+		
+		}
+
+		$this->zip->clear_data();
+		/**
+		 * nooping sebanyak zip problem lalu untuk setiap zipName akan dimasukkan zipData 
+		 */
+        foreach ($problemZipFiles as $zipName => $zipData) {
+            $this->zip->add_data($zipName, $zipData);
+        }
+
+        
+        $filename = "Download All Assignments" . ".zip";
+        $this->zip->download($filename);
+	}
 
 }
