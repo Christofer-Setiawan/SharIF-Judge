@@ -626,7 +626,7 @@ class Assignments extends CI_Controller
 
 		echo $response;
 	}
-		}
+		
 
 	//new code
 	public function downloadAllAsignments(){
