@@ -169,6 +169,18 @@
 		{{ form_error('scoreboard', '<div class="shj_error">', '</div>') }}
 	</p>
 	<p class="input_p">
+		<input id="form_is_quiz" type="checkbox" name="is_quiz" value="1" {{ edit ? (edit_assignment.is_quiz ? 'checked') : set_checkbox('is_quiz', '1') }}/>
+		<label for="form_is_quiz" class="default">Quiz</label>
+		<span class="form_comment">Check if this assignment is prepared for a quiz (default: latihan).</span>
+	</p>
+	<p class="input_p">
+		<label for="form_ipv4_subnets">IPv4 Subnets<br>
+		<span class="form_comment">IPv4 subnets (e.g. 192.0.2.0/24, 10.0.0.0/8). Leave empty to allow all IPs.</span>
+		</label>
+		<input id="form_ipv4_subnets" type="text" name="ipv4_subnets" class="sharif_input medium" value="{{ edit ? edit_assignment.ipv4_subnets : set_value('ipv4_subnets') }}" placeholder="192.0.2.0/24"/>
+		{{ form_error('ipv4_subnets', '<div class="shj_error">', '</div>') }}
+	</p>
+	<p class="input_p">
 		<input id="form_a_javaexceptions" type="checkbox" name="javaexceptions" value="1" {{ edit ? (edit_assignment.javaexceptions ? 'checked') : set_checkbox('javaexceptions', '1')|raw }} />
 		<label for="form_a_javaexceptions" class="default">Java Exceptions</label>
 		<span class="form_comment space-left">Check this to show Java exceptions to users</span>
