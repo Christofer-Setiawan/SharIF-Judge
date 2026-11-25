@@ -31,7 +31,8 @@ class Assignment_model extends CI_Model
 	{
 		// Start Database Transaction
 		$this->db->trans_start();
-
+		$raw_subnets = trim((string)$this->input->post('ipv4_subnets'));
+		$clean_subnets = $raw_subnets === '' ? '': implode(', ', array_filter(array_map('trim', explode(',', $raw_subnets))));
 		$extra_items = explode('*', $this->input->post('extra_time'));
 		$extra_time = 1;
 		foreach($extra_items as $extra_item)
@@ -55,7 +56,9 @@ class Assignment_model extends CI_Model
 			'extra_time' => $extra_time*60,
 			'late_rule' => $this->input->post('late_rule'),
 			'participants' => $this->input->post('participants'),
-			'archived_assignment' => $archived_assignment
+			'archived_assignment' => $archived_assignment,
+			'is_quiz'      => $this->input->post('is_quiz') ? 1 : 0,
+			'ipv4_subnets' => $clean_subnets,
 		);
 		if($edit)
 		{
