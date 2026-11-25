@@ -630,9 +630,9 @@ class Assignments extends CI_Controller
 
 	//new code
 	public function downloadAllAsignments(){
-		// if ($this->user->level <= 1) {
-        //     return;
-        // }
+		if ($this->user->level <= 1) {
+            return;
+        }
 
 		//mengambil database seluruh assignment melalui assignment_model
 		$assignments = $this->assignment_model->all_assignments();
